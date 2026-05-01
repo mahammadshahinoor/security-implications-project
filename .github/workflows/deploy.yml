@@ -1,4 +1,4 @@
-name: Deploy Flask App to EC2
+name: Deploy Flask App with Docker
 
 on:
   push:
@@ -16,9 +16,18 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
+        port: ${{ secrets.EC2_PORT }}
         script: |
           cd ~/security_app
+
           git pull origin main
-          source venv/bin/activate
-          pip install -r requirements.txt
-          sudo systemctl restart flaskapp
+
+          # Stop old container
+          sudo docker stop flaskapp || true
+          sudo docker rm flaskapp || true
+
+          # Build new image
+          sudo docker build -t flaskapp .
+
+          # Run container
+          sudo docker run -d -p 5000:5000 --name flaskapp flaskapp
